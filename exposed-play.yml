@@ -1,0 +1,11 @@
+---
+# Install neo4j
+
+- name: Install neo4j
+  hosts: neo4j
+  roles:
+  - role: neo4j
+    tags: neo4j
+
+
+...

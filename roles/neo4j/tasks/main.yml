@@ -1,0 +1,119 @@
+---
+
+- name: Add {{ group }} group on {{ ansible_default_ipv4.address }}
+  group:
+    name: "{{ group }}"
+    state: present
+- name: Create {{ user }} user on {{ ansible_default_ipv4.address }}
+  user:
+    name: "{{ user }}"
+    group: "{{ group }}"
+    createhome: no
+    shell: /bin/bash
+    state: present
+- name: Create {{ base_directory }} directory on {{ ansible_default_ipv4.address }}
+  file:
+    path: "{{ base_directory }}"
+    state: directory
+    mode: 0755
+    owner: "root"
+    group: "root"
+
+
+    
+- name: Create {{ item }} directory on {{ ansible_default_ipv4.address }}
+  file:
+    path: "{{ base_directory }}/{{ item }}"
+    state: directory
+    mode: 0755
+    owner: "{{ user }}"
+    group: "{{ group }}"
+  with_items:
+    - neo4j
+    - neo4j/config
+    - neo4j/data
+    - neo4j/log
+  notify: restart_neo4j
+
+- name: Download neo4j
+  get_url:
+    url: "https://s3-eu-west-1.amazonaws.com/dist.neo4j.org/neo4j-community-{{ version }}-unix.tar.gz"
+    dest: "{{ base_directory }}/neo4j"
+    mode: '0644'
+    owner: "{{ user }}"
+    group: "{{ group }}"
+
+- name: Extract neo4j on {{ ansible_default_ipv4.address }}
+  unarchive:
+    src: "{{ base_directory }}/neo4j/neo4j-community-{{ version }}-unix.tar.gz"
+    dest: "{{ base_directory }}/neo4j"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    remote_src: yes
+  notify: restart_neo4j
+
+- name: Symlink for neo4j on {{ ansible_default_ipv4.address }}
+  file:
+    src: "{{ base_directory }}/neo4j/neo4j-community-{{ version }}"
+    path: "{{ base_directory }}/neo4j/neo4j"
+    state: link
+    force: yes
+    owner: "{{ user }}"
+    group: "{{ group }}"
+  notify: restart_neo4j
+  
+- name: Configure {{ item }} for neo4j on {{ ansible_default_ipv4.address }}
+  template:
+    src: templates/{{ item }}.j2
+    dest: "{{ base_directory }}/neo4j/config/{{ item }}"
+    owner: "{{user}}"
+    group: "{{group}}"
+    mode: 0644
+  with_items:
+    - neo4j.env
+    - neo4j.conf
+  notify: restart_neo4j
+
+
+- name: Add Healthcheck script for neo4j on {{ ansible_default_ipv4.address }}
+  template:
+    src: "neo4j-healthcheck.sh.j2"
+    dest: "{{ base_directory }}/neo4j/neo4j-healthcheck.sh"
+    owner: "{{ user }}"
+    group: "{{ group }}"
+    mode: 0744
+  notify: restart_neo4j
+    
+- name: Add or modify nofile soft limit on {{ ansible_default_ipv4.address }}
+  pam_limits:
+    domain: "{{ user }}"
+    limit_type: "-"
+    limit_item: nofile
+    value: 65536
+  notify: restart_neo4j
+
+- name: OS Tuning
+  sysctl:
+    sysctl_file: /etc/sysctl.d/neo4j.conf
+    reload: yes
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+  with_items: "{{ os_tuning }}"
+  notify: restart_neo4j
+    
+- name: Service systemD for neo4j on {{ ansible_default_ipv4.address }}
+  template:
+    src: templates/neo4j.service.j2
+    dest: /etc/systemd/system/neo4j.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart_neo4j
+  
+- name: Enable service neo4j
+  systemd:
+    enabled: yes
+    daemon_reload: yes
+    name: neo4j.service
+
+...

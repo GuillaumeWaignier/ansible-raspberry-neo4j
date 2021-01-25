@@ -1,0 +1,22 @@
+[Unit]
+Description=Neo4J
+After=network.target
+
+[Service]
+Type=forking
+EnvironmentFile=-{{ base_directory }}/neo4j/config/neo4j.env
+ExecStart={{ base_directory }}/neo4j/neo4j/bin/neo4j start
+ExecStop={{ base_directory }}/neo4j/neo4j/bin/neo4j stop
+ExecReload={{ base_directory }}/neo4j/neo4j/bin/neo4j restart
+PIDFile={{ base_directory }}/neo4j/neo4j/run/neo4j.pid
+RemainAfterExit=no
+Restart=on-failure
+TimeoutSec=600
+User={{ user }}
+Group={{ group }}
+LimitNOFILE=65536
+LimitNPROC=4096
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+all:
+  vars:                        
+    ansible_connection: ssh    
+    ansible_user: pi
+
+neo4j:
+  hosts:
+    192.168.2.10:

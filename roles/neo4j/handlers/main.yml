@@ -1,0 +1,20 @@
+---
+
+- name: restart neo4j
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: neo4j.service
+  listen: restart_neo4j
+
+    
+- name: Wait for neo4j to be OK
+  command: "{{ base_directory }}/neo4j/neo4j-healthcheck.sh"
+  register: result
+  until: result.rc == 0
+  retries: 10
+  delay: 20
+  listen: restart_neo4j
+
+  
+...
