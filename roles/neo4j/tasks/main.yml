@@ -37,7 +37,7 @@
 
 - name: Download neo4j
   get_url:
-    url: "https://s3-eu-west-1.amazonaws.com/dist.neo4j.org/neo4j-community-{{ version }}-unix.tar.gz"
+    url: "https://dist.neo4j.org/neo4j-community-{{ version }}-unix.tar.gz"
     dest: "{{ base_directory }}/neo4j"
     mode: '0644'
     owner: "{{ user }}"

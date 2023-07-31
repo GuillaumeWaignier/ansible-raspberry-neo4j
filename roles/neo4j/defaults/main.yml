@@ -5,7 +5,7 @@ user: neo4j
 group: neo4j
 
 base_directory: /neo4j
-version: 4.1.6
+version: 5.10.0
 
 network_host: 0.0.0.0
 memory: 256m
@@ -15,6 +15,6 @@ login: neo4j
 password: test
 
 # Required version of Java
-java_version: 11
+java_version: 17
 
 ...
